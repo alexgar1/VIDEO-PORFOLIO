@@ -83,6 +83,76 @@ const extractScopedSegment = (input, anchorPattern, before = 8_000, after = 140_
   return input.slice(start, end)
 }
 
+const extractBalancedObject = (input, anchorIndex) => {
+  if (typeof input !== 'string') return null
+  if (!Number.isInteger(anchorIndex) || anchorIndex < 0 || anchorIndex >= input.length) return null
+
+  let startIndex = -1
+  let depth = 0
+
+  for (let index = anchorIndex; index >= 0; index -= 1) {
+    const char = input[index]
+    if (char === '}') {
+      depth += 1
+      continue
+    }
+
+    if (char !== '{') continue
+
+    if (depth === 0) {
+      startIndex = index
+      break
+    }
+
+    depth -= 1
+  }
+
+  if (startIndex < 0) return null
+
+  depth = 0
+  let endIndex = -1
+
+  for (let index = startIndex; index < input.length; index += 1) {
+    const char = input[index]
+    if (char === '{') {
+      depth += 1
+      continue
+    }
+
+    if (char !== '}') continue
+
+    depth -= 1
+    if (depth === 0) {
+      endIndex = index
+      break
+    }
+  }
+
+  if (endIndex < 0) return null
+  return input.slice(startIndex, endIndex + 1)
+}
+
+const extractInstagramMediaObject = (html, shortcode) => {
+  if (typeof html !== 'string' || typeof shortcode !== 'string' || !shortcode) return null
+
+  const targetAnchor = `"shortcode":"${shortcode}"`
+  let searchIndex = 0
+
+  while (searchIndex < html.length) {
+    const anchorIndex = html.indexOf(targetAnchor, searchIndex)
+    if (anchorIndex < 0) return null
+
+    const candidateObject = extractBalancedObject(html, anchorIndex)
+    if (candidateObject && /"shortcode":"[^"]+"/.test(candidateObject)) {
+      return candidateObject
+    }
+
+    searchIndex = anchorIndex + targetAnchor.length
+  }
+
+  return null
+}
+
 const extractMetaDescription = (html) => {
   const match = html.match(/<meta\s+name="description"\s+content="([^"]*)"/i)
   return match?.[1] ?? ''
@@ -136,28 +206,31 @@ const fetchInstagramMetrics = async (url) => {
   const embedUrl = `https://www.instagram.com/${target.mediaType}/${target.shortcode}/embed/captioned/`
   const html = await fetchDocument(embedUrl)
   const normalizedHtml = html.replace(/\\"/g, '"')
+  const mediaObject = extractInstagramMediaObject(normalizedHtml, target.shortcode)
   const escapedShortcode = escapeRegExp(target.shortcode)
-  const segment = extractScopedSegment(normalizedHtml, new RegExp(`shortcode":"${escapedShortcode}"`), 8_000, 180_000)
+  const scopedSegment = extractScopedSegment(normalizedHtml, new RegExp(`shortcode":"${escapedShortcode}"`), 8_000, 180_000)
+  const segment = mediaObject ?? scopedSegment
 
   const views =
     firstCountMatch(segment, [
-      /video_view_count":\s*"?([\d,]+)"?/,
-      /video_play_count":\s*"?([\d,]+)"?/,
-      /play_count":\s*"?([\d,]+)"?/,
+      /"video_view_count":\s*"?([\d,]+)"?/,
+      /"view_count":\s*"?([\d,]+)"?/,
+      /"video_play_count":\s*"?([\d,]+)"?/,
+      /"play_count":\s*"?([\d,]+)"?/,
     ]) ??
     firstCountMatch(extractMetaDescription(normalizedHtml), [/([\d.,KMB]+)\s+(?:plays|views)\b/i])
 
   const likes =
     firstCountMatch(segment, [
-      /edge_liked_by":\{"count":\s*"?([\d,]+)"?/,
-      /edge_media_preview_like":\{"count":\s*"?([\d,]+)"?/,
-      /like_count":\s*"?([\d,]+)"?/,
+      /"edge_liked_by":\{"count":\s*"?([\d,]+)"?/,
+      /"edge_media_preview_like":\{"count":\s*"?([\d,]+)"?/,
+      /"like_count":\s*"?([\d,]+)"?/,
     ]) ?? firstCountMatch(extractMetaDescription(normalizedHtml), [/([\d.,KMB]+)\s+likes?\b/i])
 
   const comments =
     firstCountMatch(segment, [
-      /edge_media_to_comment":\{"count":\s*"?([\d,]+)"?/,
-      /comment_count":\s*"?([\d,]+)"?/,
+      /"edge_media_to_comment":\{"count":\s*"?([\d,]+)"?/,
+      /"comment_count":\s*"?([\d,]+)"?/,
     ]) ?? firstCountMatch(extractMetaDescription(normalizedHtml), [/([\d.,KMB]+)\s+comments?\b/i])
 
   return { views, likes, comments }

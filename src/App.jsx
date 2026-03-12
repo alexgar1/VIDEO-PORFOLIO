@@ -11,6 +11,7 @@ import heroVideoSrc from '../video/000-hero-45s.mp4'
 
 const emailAddress = 'alexgarrett2468@gmail.com'
 const phoneHref = 'tel:+18016804694'
+const instagramHref = 'https://www.instagram.com/alexg.mov/'
 const linkedinHref = 'https://www.linkedin.com/in/alex-garrett-a21564243/'
 const appleGaramondStack = "'Apple Garamond', Garamond, 'Times New Roman', serif"
 const buildEngagementMetrics = (views = '--', likes = '--', comments = '--') => [
@@ -38,7 +39,7 @@ const projectBriefSubject = 'Project Brief for Alex Garrett'
 const encodedProjectBriefSubject = encodeURIComponent(projectBriefSubject)
 const encodedProjectBriefBody = encodeURIComponent(projectBriefBody)
 
-const projectBriefWebHref = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(emailAddress)}&su=${encodedProjectBriefSubject}&body=${encodedProjectBriefBody}`
+const projectBriefHref = `mailto:${encodeURIComponent(emailAddress)}?subject=${encodedProjectBriefSubject}&body=${encodedProjectBriefBody}`
 
 const portfolioSections = [
   {
@@ -51,9 +52,6 @@ const portfolioSections = [
         source: 'Instagram',
         replaceMetaWithMetrics: true,
         metrics: buildEngagementMetrics('2.1M', '206K', 553),
-        metricMinimums: {
-          views: 2_100_000,
-        },
         href: 'https://www.instagram.com/reel/DOyrMpyCXV0/',
         videoSrc: '/media/portfolio/DOyrMpyCXV0.mp4',
         aspect: 'portrait',
@@ -104,9 +102,6 @@ const portfolioSections = [
         source: 'Instagram',
         replaceMetaWithMetrics: true,
         metrics: buildEngagementMetrics('135.7K', '11K', 39),
-        metricMinimums: {
-          views: 135_700,
-        },
         href: 'https://www.instagram.com/reel/DVrfbfvjkko/',
         videoSrc: '/media/portfolio/DVrfbfvjkko.mp4',
         aspect: 'portrait',
@@ -164,6 +159,7 @@ const portfolioSections = [
         href: 'https://www.linkedin.com/posts/abdulla007_i-spent-the-last-few-months-building-interview-activity-7389017263137366017-mnw5',
         embedSrc: 'https://www.linkedin.com/embed/feed/update/urn:li:ugcPost:7389017099156787200?compact=1',
         aspect: 'landscape',
+        videoOnly: true,
         client: 'Interview Coder',
         objective: 'Communicate product value to technical audiences through narrative pacing.',
         role: 'Interview edit, rhythm shaping, and final social cut.',
@@ -176,6 +172,7 @@ const portfolioSections = [
         href: 'https://www.youtube.com/watch?v=RE6ahIf3kwA&t=61s',
         embedSrc: 'https://www.youtube.com/embed/RE6ahIf3kwA?si=UruYK2nYYktv_gV9',
         aspect: 'landscape',
+        videoOnly: true,
         client: 'YouTube Collaboration',
         objective: 'Deliver a long-form cut with strong scene transitions and clean momentum.',
         role: 'Editorial structure and finishing.',
@@ -188,6 +185,7 @@ const portfolioSections = [
         href: 'https://www.youtube.com/watch?v=xTR8c4j_DKk&t=13s',
         embedSrc: 'https://www.youtube.com/embed/xTR8c4j_DKk?si=ehxl5zHvMEZbWEkJ',
         aspect: 'landscape',
+        videoOnly: true,
         client: 'Experimental Film Project',
         objective: 'Maintain cinematic tone while protecting story clarity across scenes.',
         role: 'Story edit and visual polish.',
@@ -200,6 +198,7 @@ const portfolioSections = [
         href: 'https://www.linkedin.com/feed/update/urn:li:ugcPost:7432919049581314048',
         embedSrc: 'https://www.linkedin.com/embed/feed/update/urn:li:ugcPost:7432919049581314048?compact=1',
         aspect: 'landscape',
+        videoOnly: true,
         client: 'B2B Brand Campaign',
         objective: 'Support demand generation content with stronger visual storytelling.',
         role: 'Campaign edit and delivery optimization.',
@@ -218,6 +217,7 @@ const portfolioSections = [
         href: 'https://drive.google.com/file/d/17DS1xWMJFBe0rNCXQHvWcRSJ1y_vxUPv/view',
         embedSrc: 'https://drive.google.com/file/d/17DS1xWMJFBe0rNCXQHvWcRSJ1y_vxUPv/preview',
         aspect: 'landscape',
+        videoOnly: true,
         client: 'Brand Motion Package',
         objective: 'Create reusable motion assets that keep campaign visuals consistent.',
         role: 'Animation, compositing, and final export.',
@@ -230,6 +230,7 @@ const portfolioSections = [
         href: 'https://www.linkedin.com/posts/kaedim_today-is-a-big-milestone-for-kaedim-for-activity-7434690563268018176--REi',
         embedSrc: 'https://www.linkedin.com/embed/feed/update/urn:li:ugcPost:7434690372456558593?compact=1',
         aspect: 'linkedinCompact',
+        videoOnly: true,
         client: 'Kaedim',
         objective: 'Support a milestone launch with branded motion graphics and polished pacing.',
         role: 'Motion design, edit pass, and social delivery.',
@@ -357,6 +358,7 @@ const iframeAllow =
   'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share'
 
 const unavailableMetricTokens = new Set(['', '--', '-', '—', 'n/a', 'na', 'not available'])
+const exactMetricFormatter = new Intl.NumberFormat('en-US')
 
 const hasLiveMetricValue = (value) => typeof value === 'number' && Number.isFinite(value) && value >= 0
 
@@ -373,16 +375,7 @@ const formatMetricValue = (label, value) => {
   if (typeof value !== 'number' || Number.isNaN(value) || value < 0) {
     return label.toLowerCase() === 'views' ? 'Hidden' : 'N/A'
   }
-
-  if (value >= 1_000_000) {
-    return `${(value / 1_000_000).toFixed(value >= 10_000_000 ? 0 : 1).replace(/\.0$/, '')}M`
-  }
-
-  if (value >= 1_000) {
-    return `${(value / 1_000).toFixed(value >= 100_000 ? 0 : 1).replace(/\.0$/, '')}K`
-  }
-
-  return String(value)
+  return exactMetricFormatter.format(Math.round(value))
 }
 
 const getEmbedSrc = (item) => {
@@ -399,6 +392,75 @@ const getEmbedSrc = (item) => {
   } catch {
     return item.embedSrc
   }
+}
+
+function OptimizedLoopVideo({ src, className, poster, eager = false }) {
+  const supportsIntersectionObserver = typeof window !== 'undefined' && 'IntersectionObserver' in window
+  const shouldObserveVisibility = !eager && supportsIntersectionObserver
+  const videoRef = useRef(null)
+  const [isVisible, setIsVisible] = useState(eager || !supportsIntersectionObserver)
+  const [canPreload, setCanPreload] = useState(eager || !supportsIntersectionObserver)
+
+  useEffect(() => {
+    if (!shouldObserveVisibility) return undefined
+
+    const videoElement = videoRef.current
+    if (!videoElement) return undefined
+
+    const observer = new window.IntersectionObserver(
+      (entries) => {
+        const entry = entries[0]
+        const shouldPlay = entry.isIntersecting && entry.intersectionRatio >= 0.35
+
+        setIsVisible(shouldPlay)
+        if (entry.isIntersecting) {
+          setCanPreload(true)
+        }
+      },
+      {
+        root: null,
+        rootMargin: '220px 0px',
+        threshold: [0, 0.35],
+      },
+    )
+
+    observer.observe(videoElement)
+
+    return () => observer.disconnect()
+  }, [shouldObserveVisibility])
+
+  useEffect(() => {
+    const videoElement = videoRef.current
+    if (!videoElement) return undefined
+
+    if (isVisible) {
+      const playPromise = videoElement.play()
+      if (playPromise && typeof playPromise.catch === 'function') {
+        playPromise.catch(() => {})
+      }
+      return undefined
+    }
+
+    videoElement.pause()
+    return undefined
+  }, [isVisible])
+
+  return (
+    <video
+      ref={videoRef}
+      src={src}
+      className={className}
+      autoPlay
+      loop
+      muted
+      playsInline
+      preload={eager ? 'auto' : canPreload ? 'metadata' : 'none'}
+      controls={false}
+      poster={poster}
+      disablePictureInPicture
+      controlsList="nodownload noplaybackrate noremoteplayback"
+    />
+  )
 }
 
 const applyLiveMetrics = (sections, liveMetricsByItemId) => {
@@ -428,7 +490,8 @@ const applyLiveMetrics = (sections, liveMetricsByItemId) => {
 }
 
 function PortfolioCard({ item, index }) {
-  const showPrimaryMeta = !item.replaceMetaWithMetrics
+  const showPrimaryMeta = !item.replaceMetaWithMetrics && !item.videoOnly
+  const showCardDetails = showPrimaryMeta || item.metrics?.length
   const mediaTitle = `${item.title} on ${item.source}`
 
   return (
@@ -447,27 +510,15 @@ function PortfolioCard({ item, index }) {
               title={mediaTitle}
               className="block h-full w-full"
             >
-              <video
+              <OptimizedLoopVideo
                 src={item.videoSrc}
                 className="h-full w-full object-cover"
-                autoPlay
-                loop
-                muted
-                playsInline
-                preload="metadata"
-                controls={false}
               />
             </a>
           ) : (
-            <video
+            <OptimizedLoopVideo
               src={item.videoSrc}
               className="h-full w-full object-cover"
-              autoPlay
-              loop
-              muted
-              playsInline
-              preload="metadata"
-              controls={false}
             />
           )
         ) : (
@@ -484,35 +535,37 @@ function PortfolioCard({ item, index }) {
         )}
       </div>
 
-      <div className="space-y-3 p-4 md:p-5">
-        {showPrimaryMeta ? (
-          <>
-            <div className="flex items-center gap-3 text-[11px] uppercase tracking-[0.18em] text-mist/55">
-              <span>{item.source}</span>
-            </div>
+      {showCardDetails ? (
+        <div className="space-y-3 p-4 md:p-5">
+          {showPrimaryMeta ? (
+            <>
+              <div className="flex items-center gap-3 text-[11px] uppercase tracking-[0.18em] text-mist/55">
+                <span>{item.source}</span>
+              </div>
 
-            <h3 className="font-display text-xl leading-tight text-mist">{item.title}</h3>
-          </>
-        ) : null}
+              <h3 className="font-display text-xl leading-tight text-mist">{item.title}</h3>
+            </>
+          ) : null}
 
-        {item.metrics?.length ? (
-          <dl className="grid grid-cols-3 gap-2">
-            {item.metrics.map((metric) => {
-              const formattedMetricValue = formatMetricValue(metric.label, metric.value)
-              const isUnavailableMetric = formattedMetricValue === 'Hidden' || formattedMetricValue === 'N/A'
+          {item.metrics?.length ? (
+            <dl className="grid grid-cols-3 gap-2">
+              {item.metrics.map((metric) => {
+                const formattedMetricValue = formatMetricValue(metric.label, metric.value)
+                const isUnavailableMetric = formattedMetricValue === 'Hidden' || formattedMetricValue === 'N/A'
 
-              return (
-                <div key={`${item.id}-${metric.label}`} className="rounded-xl border border-white/15 bg-white/[0.04] px-3 py-2">
-                  <dt className="text-[9px] uppercase tracking-[0.12em] text-mist/50 md:text-[10px]">{metric.label}</dt>
-                  <dd className={`mt-1 text-xs font-semibold leading-tight md:text-sm ${isUnavailableMetric ? 'text-mist/70' : 'text-mist'}`}>
-                    {formattedMetricValue}
-                  </dd>
-                </div>
-              )
-            })}
-          </dl>
-        ) : null}
-      </div>
+                return (
+                  <div key={`${item.id}-${metric.label}`} className="rounded-xl border border-white/15 bg-white/[0.04] px-3 py-2">
+                    <dt className="text-[9px] uppercase tracking-[0.12em] text-mist/50 md:text-[10px]">{metric.label}</dt>
+                    <dd className={`mt-1 text-xs font-semibold leading-tight md:text-sm ${isUnavailableMetric ? 'text-mist/70' : 'text-mist'}`}>
+                      {formattedMetricValue}
+                    </dd>
+                  </div>
+                )
+              })}
+            </dl>
+          ) : null}
+        </div>
+      ) : null}
     </article>
   )
 }
@@ -607,6 +660,20 @@ function App() {
 
       <div className="fixed right-4 top-4 z-50 flex items-center gap-2 text-mist/85 md:right-6 md:top-6">
         <a
+          href={instagramHref}
+          target="_blank"
+          rel="noreferrer"
+          aria-label="Instagram"
+          title="Instagram"
+          className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/25 bg-black/35 backdrop-blur-xl transition hover:border-white/70 hover:bg-white/10 hover:text-white"
+        >
+          <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.8">
+            <rect x="3.5" y="3.5" width="17" height="17" rx="4.5" />
+            <circle cx="12" cy="12" r="4.2" />
+            <circle cx="17.3" cy="6.7" r="1" fill="currentColor" stroke="none" />
+          </svg>
+        </a>
+        <a
           href={linkedinHref}
           target="_blank"
           rel="noreferrer"
@@ -629,9 +696,7 @@ function App() {
           </svg>
         </a>
         <a
-          href={projectBriefWebHref}
-          target="_blank"
-          rel="noreferrer"
+          href={projectBriefHref}
           aria-label="Email Alex Garrett"
           title="Email"
           className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/25 bg-black/35 backdrop-blur-xl transition hover:border-white/70 hover:bg-white/10 hover:text-white"
@@ -676,17 +741,12 @@ function App() {
 
           <div className="animate-fade-up [animation-delay:120ms]">
             <div className="relative overflow-hidden rounded-3xl border border-white/20 shadow-glow">
-              <video
+              <OptimizedLoopVideo
                 className="h-full w-full object-cover"
-                autoPlay
-                loop
-                muted
-                playsInline
-                preload="metadata"
+                eager
                 poster="/media/hero-poster.jpg"
-              >
-                <source src={heroVideoSrc} type="video/mp4" />
-              </video>
+                src={heroVideoSrc}
+              />
               <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent" />
             </div>
           </div>
@@ -797,6 +857,11 @@ function App() {
                           <PortfolioCard key={item.id} item={item} index={index} />
                         ))}
                       </div>
+                      {section.id === 'social-media' ? (
+                        <p className="mt-4 text-center text-[11px] text-mist/55 md:text-xs">
+                          Engagement statistics may be outdated or incorrect
+                        </p>
+                      ) : null}
                     </>
                   ) : null}
                 </div>
@@ -849,9 +914,7 @@ function App() {
 
             <div className="mt-6 flex flex-wrap gap-3">
               <a
-                href={projectBriefWebHref}
-                target="_blank"
-                rel="noreferrer"
+                href={projectBriefHref}
                 className="inline-flex rounded-full border border-amber-200/70 bg-amber-200/95 px-6 py-3 text-xs font-semibold uppercase tracking-[0.16em] text-black transition hover:bg-amber-100"
               >
                 Send Project Brief
