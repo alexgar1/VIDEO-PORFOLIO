@@ -358,9 +358,23 @@ const iframeAllow =
   'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share'
 
 const unavailableMetricTokens = new Set(['', '--', '-', '—', 'n/a', 'na', 'not available'])
-const exactMetricFormatter = new Intl.NumberFormat('en-US')
+const compactMetricFormatter = new Intl.NumberFormat('en-US', {
+  notation: 'compact',
+  maximumFractionDigits: 1,
+})
 
 const hasLiveMetricValue = (value) => typeof value === 'number' && Number.isFinite(value) && value >= 0
+
+const parseNumericMetricValue = (value) => {
+  if (typeof value === 'number') {
+    return Number.isFinite(value) && value >= 0 ? value : null
+  }
+
+  if (typeof value !== 'string') return null
+
+  const numericValue = Number(value.trim().replaceAll(',', ''))
+  return Number.isFinite(numericValue) && numericValue >= 0 ? numericValue : null
+}
 
 const formatMetricValue = (label, value) => {
   if (typeof value === 'string') {
@@ -369,13 +383,15 @@ const formatMetricValue = (label, value) => {
       return label.toLowerCase() === 'views' ? 'Hidden' : 'N/A'
     }
 
-    return normalizedValue
+    const numericValue = parseNumericMetricValue(normalizedValue)
+    return numericValue === null ? normalizedValue : compactMetricFormatter.format(Math.round(numericValue))
   }
 
-  if (typeof value !== 'number' || Number.isNaN(value) || value < 0) {
+  const numericValue = parseNumericMetricValue(value)
+  if (numericValue === null) {
     return label.toLowerCase() === 'views' ? 'Hidden' : 'N/A'
   }
-  return exactMetricFormatter.format(Math.round(value))
+  return compactMetricFormatter.format(Math.round(numericValue))
 }
 
 const getEmbedSrc = (item) => {
